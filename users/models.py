@@ -1,5 +1,5 @@
 from django.db import models
-from django.contrib import AbstractBaseUser, BaseUserManager, PermissionsMixin
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.utils import timezone
 import uuid
 
@@ -37,24 +37,44 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     email= models.EmailField(unique=True)
     is_active = models.BooleanField(default = False)
     is_staff = models.BooleanField(default=False)
-    roles = models.ManyToManyField(Role)
     activation_pin = models.CharField(max_length = 6, blank=True, null=True)
     date_joined = models.DateTimeField(default=timezone.now)
-    
+    otp = models.CharField(max_length=6, blank=True, null=True)
     
     objects = CustomUserManager()
     
     USERNAME_FIELD = 'email'
-    # REQUIRED_FIELDS  = ['first_name', 'last_name']
+    REQUIRED_FIELDS  = []
     
     def __str__(self):
         return self.email
     
     def generate_activation_pin(self):
         import random
-        pin = ''.join([str(random.radint(0,9)) for _ in range(6)])
+        pin = ''.join([str(random.randint(0,9)) for _ in range(6)])
         self.activation_pin = pin
         self.save()
+        
+    def generate_otp(self):
+        import random
+        pin = ''.join([str(random.randint(0,9)) for _ in range(6)])
+        self.otp = pin
+        self.save()
+        
+        
+class Profile(models.Model):
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE)
+    firstname = models.CharField(max_length=255, blank=True, null=True)
+    lastname = models.CharField(max_length = 255, blank=True, null=True)
+    profile_pics = models.ImageField(upload_to='profile_pics', blank=True)
+    nationality = models.CharField(max_length=50, blank=True, null=True)
+    user_role = models.ManyToManyField('Role', blank=True)
+    
+    
+    def __str__(self):
+        return self.user.firstname
+
+
     
 
     
